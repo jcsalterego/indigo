@@ -47,7 +47,7 @@ func matchesCollection(collection string, filters []string) bool {
 	return false
 }
 
-func matchesRecordSubjectUri(collStr string, recordSubjectUri string, filters []string) bool {
+func matchesRecordcontent(collStr string, recordcontent string, filters []string) bool {
 	if len(filters) == 0 {
 		return true
 	}
@@ -62,7 +62,7 @@ func matchesRecordSubjectUri(collStr string, recordSubjectUri string, filters []
 		}
 		// create regex from filter
 		regexPattern := strings.ReplaceAll(filterValue, "*", ".*")
-		matched, err := regexp.MatchString(regexPattern, recordSubjectUri)
+		matched, err := regexp.MatchString(regexPattern, recordcontent)
 		if err != nil {
 			continue
 		}

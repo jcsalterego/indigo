@@ -29,10 +29,10 @@ type Resyncer struct {
 
 	claimJobMu sync.Mutex
 
-	repoFetchTimeout        time.Duration
-	collectionFilters       []string
-	recordSubjectUriFilters []string
-	parallelism             int
+	repoFetchTimeout     time.Duration
+	collectionFilters    []string
+	recordContentFilters []string
+	parallelism          int
 
 	pdsBackoff   map[string]time.Time
 	pdsBackoffMu sync.RWMutex
@@ -243,7 +243,7 @@ func (r *Resyncer) doResync(ctx context.Context, did string) (bool, error) {
 
 		if subj, ok := rec["subject"].(map[string]interface{}); ok {
 			if uri, ok := subj["uri"].(string); ok {
-				if !matchesRecordSubjectUri(collStr, uri, r.recordSubjectUriFilters) {
+				if !matchesRecordcontent(collStr, uri, r.recordContentFilters) {
 					return nil
 				}
 			}
