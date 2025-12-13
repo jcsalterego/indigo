@@ -134,8 +134,8 @@ func run(args []string) error {
 					},
 					&cli.StringSliceFlag{
 						Name:    "record-content-filters",
-						Usage:   "filter output records by uri (supports wildcards)",
-						Sources: cli.EnvVars("TAP_RECORD_SUBJECT_URI_FILTERS"),
+						Usage:   "filter output records by content",
+						Sources: cli.EnvVars("TAP_RECORD_CONTENT_FILTERS"),
 					},
 					&cli.BoolFlag{
 						Name:    "outbox-only",
