@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/rand"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -43,6 +44,32 @@ func matchesCollection(collection string, filters []string) bool {
 		}
 	}
 
+	return false
+}
+
+func matchesRecordSubjectUri(collStr string, recordSubjectUri string, filters []string) bool {
+	if len(filters) == 0 {
+		return true
+	}
+	for _, filter := range filters {
+		parts := strings.SplitN(filter, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		filterColl, filterValue := parts[0], parts[1]
+		if collStr != filterColl {
+			continue
+		}
+		// create regex from filter
+		regexPattern := strings.ReplaceAll(filterValue, "*", ".*")
+		matched, err := regexp.MatchString(regexPattern, recordSubjectUri)
+		if err != nil {
+			continue
+		}
+		if matched {
+			return true
+		}
+	}
 	return false
 }
 
