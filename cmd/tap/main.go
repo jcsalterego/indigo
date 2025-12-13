@@ -132,6 +132,11 @@ func run(args []string) error {
 						Usage:   "filter output records by collection (supports wildcards)",
 						Sources: cli.EnvVars("TAP_COLLECTION_FILTERS"),
 					},
+					&cli.StringSliceFlag{
+						Name:    "record-subject-uri-filters",
+						Usage:   "filter output records by uri (supports wildcards)",
+						Sources: cli.EnvVars("TAP_RECORD_SUBJECT_URI_FILTERS"),
+					},
 					&cli.BoolFlag{
 						Name:    "outbox-only",
 						Usage:   "run in outbox-only mode (no firehose, resync, or enumeration)",
@@ -197,6 +202,7 @@ func runTap(ctx context.Context, cmd *cli.Command) error {
 		DisableAcks:                cmd.Bool("disable-acks"),
 		WebhookURL:                 cmd.String("webhook-url"),
 		CollectionFilters:          cmd.StringSlice("collection-filters"),
+		RecordSubjectUriFilters:    cmd.StringSlice("record-subject-uri-filters"),
 		OutboxOnly:                 cmd.Bool("outbox-only"),
 		AdminPassword:              cmd.String("admin-password"),
 		RetryTimeout:               cmd.Duration("retry-timeout"),
