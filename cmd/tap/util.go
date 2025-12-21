@@ -39,6 +39,7 @@ func matchesCollection(collection string, filters []string) bool {
 			}
 		} else {
 			if collection == filter {
+				print("MATCH!! ", filter, " against collection: ", collection, "\n")
 				return true
 			}
 		}
@@ -47,30 +48,87 @@ func matchesCollection(collection string, filters []string) bool {
 	return false
 }
 
-func matchesRecordcontent(collStr string, recordcontent string, filters []string) bool {
+type RecordCollectionFilter struct {
+	Collection string
+	JSONPath   string
+	Pattern    *regexp.Regexp
+}
+
+func buildRecordCollectionFilter(filter string) (*RecordCollectionFilter, bool) {
+	re := regexp.MustCompile(`^([^\[]+)\[([^\]]+)\]:(.+)$`)
+	matches := re.FindStringSubmatch(filter)
+	if len(matches) != 4 {
+		return nil, false
+	}
+	collection := matches[1]
+	jsonPath := matches[2]
+	filterValue := matches[3]
+	filterPattern := strings.ReplaceAll(filterValue, "*", ".*")
+	patternRe := regexp.MustCompile("^" + filterPattern + "$")
+	if patternRe == nil {
+		return nil, false
+	}
+
+	return &RecordCollectionFilter{
+		Collection: collection,
+		JSONPath:   jsonPath,
+		Pattern:    patternRe,
+	}, true
+}
+
+func matchesRecordContent(r *Resyncer, collStr string, rec map[string]any, filters []string) bool {
 	if len(filters) == 0 {
 		return true
 	}
+	collFilterCount := 0
 	for _, filter := range filters {
-		parts := strings.SplitN(filter, "=", 2)
-		if len(parts) != 2 {
+		rcf, ok := buildRecordCollectionFilter(filter)
+		if !ok {
+			r.logger.Warn("invalid record content filter", "filter", filter)
 			continue
 		}
-		filterColl, filterValue := parts[0], parts[1]
-		if collStr != filterColl {
+		if rcf.Collection == collStr {
+			collFilterCount++
+		}
+		testValue, ok := getByJSONPath(rec, rcf.JSONPath)
+		if !ok {
+			r.logger.Warn("json path not found in record", "jsonPath", rcf.JSONPath, "collection", collStr)
 			continue
 		}
-		// create regex from filter
-		regexPattern := strings.ReplaceAll(filterValue, "*", ".*")
-		matched, err := regexp.MatchString(regexPattern, recordcontent)
-		if err != nil {
+		testValueStr, ok := testValue.(string)
+		if !ok {
+			r.logger.Warn("json path value is not a string", "jsonPath", rcf.JSONPath, "collection", collStr)
 			continue
 		}
-		if matched {
+		if rcf.Pattern.MatchString(testValueStr) {
+			r.logger.Info(":) MATCHED")
 			return true
 		}
 	}
-	return false
+	if collFilterCount > 0 {
+		r.logger.Info(":( NOT MATCHED")
+		return false
+	} else {
+		r.logger.Info(":) MATCHED")
+		return true
+	}
+}
+
+func getByJSONPath(rec map[string]any, jsonPath string) (any, bool) {
+	parts := strings.Split(jsonPath, ".")
+
+	var cur any = rec
+	for _, p := range parts {
+		m, ok := cur.(map[string]any)
+		if !ok {
+			return nil, false
+		}
+		cur, ok = m[p]
+		if !ok {
+			return nil, false
+		}
+	}
+	return cur, true
 }
 
 func evtHasSignalCollection(evt *comatproto.SyncSubscribeRepos_Commit, signalColl string) bool {
